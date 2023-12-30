@@ -1,0 +1,13 @@
+io:
+  dataname: shanghaiTech  # york, shanghaiTech
+  model_initialize_file: FClip/ckpt/HG1_D3/checkpoint.pth
+
+
+model:
+  # backbone parameters
+  backbone: stacked_hourglass  # stacked_hourglass, hourglass_lines
+  depth: 3
+  num_stacks: 1
+  num_blocks: 1
+  inplanes: 64
+
