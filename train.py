@@ -14,7 +14,6 @@ Options:
 """
 
 import os
-import glob
 import random
 import shutil
 import os.path as osp
@@ -24,13 +23,11 @@ import numpy as np
 import torch
 from docopt import docopt
 
-from config.config import C, M
+from models import build_model
+from config import C, M
 from dataset.dataset import collate
 from dataset.dataset import LineDataset
-
-from models.stage_1 import FClip
-from models import MultitaskHead, hg, hgl, hr
-from FClip.lr_schedulers import init_lr_scheduler
+from lr_schedulers import init_lr_scheduler
 from trainer import Trainer
 
 
@@ -43,49 +40,6 @@ def get_outdir(identifier):
         os.makedirs(outdir)
     C.to_yaml(osp.join(outdir, "config.yaml"))
     return outdir
-
-
-def build_model():
-    if M.backbone == "stacked_hourglass":
-        model = hg(
-            depth=M.depth,
-            head=lambda c_in, c_out: MultitaskHead(c_in, c_out),
-            num_stacks=M.num_stacks,
-            num_blocks=M.num_blocks,
-            num_classes=sum(sum(MultitaskHead._get_head_size(), [])),
-        )
-    elif M.backbone == "hourglass_lines":
-        model = hgl(
-            depth=M.depth,
-            head=lambda c_in, c_out: MultitaskHead(c_in, c_out),
-            num_stacks=M.num_stacks,
-            num_blocks=M.num_blocks,
-            num_classes=sum(sum(MultitaskHead._get_head_size(), [])),
-        )
-    elif M.backbone == "hrnet":
-        model = hr(
-            head=lambda c_in, c_out: MultitaskHead(c_in, c_out),
-            num_classes=sum(sum(MultitaskHead._get_head_size(), [])),
-        )
-    else:
-        raise NotImplementedError
-
-    model = FClip(model)
-
-    if M.backbone == "hrnet":
-        model = torch.nn.DataParallel(model)
-
-    if C.io.model_initialize_file:
-        if torch.cuda.is_available():
-            checkpoint = torch.load(C.io.model_initialize_file)
-        else:
-            checkpoint = torch.load(C.io.model_initialize_file, map_location=torch.device('cpu'))
-        model.load_state_dict(checkpoint["model_state_dict"])
-        del checkpoint
-        print('=> loading model from {}'.format(C.io.model_initialize_file))
-
-    print("Finished constructing model!")
-    return model
 
 
 def main():
@@ -113,18 +67,16 @@ def main():
     # 1. dataset
     datadir = C.io.datadir
     kwargs = {
-        "batch_size": M.batch_size,
         "collate_fn": collate,
         "num_workers": C.io.num_workers,
         "pin_memory": True,
     }
-    dataname = C.io.dataname
     train_loader = torch.utils.data.DataLoader(
-        LineDataset(datadir, split="train", dataset=dataname), batch_size=M.batch_size, shuffle=True, drop_last=True,
+        LineDataset(datadir, split="train"), batch_size=M.batch_size, shuffle=True, drop_last=True,
         **kwargs
     )
     val_loader = torch.utils.data.DataLoader(
-        LineDataset(datadir, split="valid", dataset=dataname), batch_size=M.eval_batch_size, **kwargs
+        LineDataset(datadir, split="valid"), batch_size=M.eval_batch_size, **kwargs
     )
 
     # 2. model

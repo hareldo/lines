@@ -264,7 +264,7 @@ class CropAugmentation():
         return new_lines.numpy()
 
 
-class ResizeResolution():
+class ResizeResolution:
 
     @staticmethod
     def resize(lpos, image, resolu, ang_type="radian"):

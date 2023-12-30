@@ -1,5 +1,4 @@
 io:
-  dataname: shanghaiTech  # york, shanghaiTech
   model_initialize_file: FClip/ckpt/HG2/checkpoint.pth
 
 

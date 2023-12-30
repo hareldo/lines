@@ -7,10 +7,10 @@ Use lr=0.01 for current version
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from FClip.config import M
+from config import M
 import time
 
-__all__ = ["HourglassNet", "hg"]
+__all__ = ["HourglassNet", "hgl"]
 
 
 class BottleneckLine(nn.Module):
@@ -390,7 +390,7 @@ class HourglassNet(nn.Module):
         return out[::-1], y, extra_info  # out_vps[::-1]
 
 
-def hg(**kwargs):
+def hgl(**kwargs):
     model = HourglassNet(
         # Bottleneck2D,
         head=kwargs.get("head", lambda c_in, c_out: nn.Conv2d(c_in, c_out, 1)),

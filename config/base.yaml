@@ -1,6 +1,6 @@
 io:
   logdir: logs/
-  datadir: dataset/york #  /home/dxl/Data/wireframe1_datarota_3w  # /home/dxl/Data/wireframe     wireframe1_datarota_3w
+  datadir: dataset/tagging/0.1
   num_workers: 0
   tensorboard_port: 0
   validation_interval: 60000

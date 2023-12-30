@@ -82,8 +82,7 @@ Drive ([link1](https://drive.google.com/file/d/1q8pQzYBJPh3brHUhjkVIxfbLk0XEigIe
 scratch rather than downloading the processed one.  
 
 ```bash
-dataset/wireframe.py data/wireframe_raw data/wireframe
-dataset/wireframe_line.py data/wireframe_raw data/wireframe
+dataset/prepare.py data/raw data/tagging
 ```
 
 

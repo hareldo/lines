@@ -4,10 +4,9 @@ Use lr=0.01 for current version
 (c) Yichao Zhou (LCNN)
 (c) YANG, Wei
 """
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from FClip.config import M
+from config import M
 import time
 
 __all__ = ["HourglassNet", "hg"]

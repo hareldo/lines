@@ -1,25 +1,18 @@
 import os
-import time
 import shutil
 import os.path as osp
 from timeit import default_timer as timer
-
 import numpy as np
 import torch
-import matplotlib as mpl
-# mpl.use('Agg')
-import matplotlib.pyplot as plt
-from FClip.utils import recursive_to, ModelPrinter
-from FClip.config import C
-# os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+from tqdm import tqdm
+
+from utils import recursive_to
+from config import C
 
 
 class Trainer(object):
     def __init__(self, device, model, optimizer, lr_scheduler, train_loader, val_loader, out, bml=1e1000):
-
-        from FClip.visualize import VisualizeResults
         self.device = device
-
         self.model = model.to(device)
         self.optim = optimizer
         self.lr_scheduler = lr_scheduler
@@ -46,8 +39,8 @@ class Trainer(object):
         self.acc_label = None
         self.avg_metrics = None
         self.metrics = np.zeros(0)
-        self.visual = VisualizeResults()
-        self.printer = ModelPrinter(out)
+        # self.visual = VisualizeResults()
+        # self.printer = ModelPrinter(out)
 
     def _loss(self, result):
         losses = result["losses"]
@@ -59,7 +52,7 @@ class Trainer(object):
             self.acc_label = ["Acc"] + list(accuracy[0].keys())
             self.metrics = np.zeros([self.num_stacks, len(self.loss_labels)+len(self.acc_label)])
 
-            self.printer.loss_head(loss_labels=self.loss_labels+self.acc_label)
+            # self.printer.loss_head(loss_labels=self.loss_labels+self.acc_label)
 
         total_loss = 0
         for i in range(self.num_stacks):
@@ -167,7 +160,6 @@ class Trainer(object):
         time = timer()
 
         for batch_idx, (image, target) in enumerate(self.train_loader):
-
             self.optim.zero_grad()
             self.metrics[...] = 0
 
@@ -210,9 +202,6 @@ class Trainer(object):
             self.iteration += 1
 
     def train(self):
-        plt.rcParams["figure.figsize"] = (24, 24)
-        epoch_size = len(self.train_loader)
-        start_epoch = self.iteration // epoch_size
-        for self.epoch in range(start_epoch, self.max_epoch):
+        for self.epoch in range(0, self.max_epoch):
             self.train_epoch()
             self.lr_scheduler.step()

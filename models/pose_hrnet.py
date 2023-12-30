@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 
 from config.box import Box
-from config.config import M
+from config import M
 
 
 BN_MOMENTUM = 0.1

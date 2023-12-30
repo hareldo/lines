@@ -1,12 +1,14 @@
 import glob
+import os.path
+
 import numpy as np
 import torch
 from skimage import io
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
-from config.config import M
-from input_parsing import WireframeHuangKun
-from transforms import CropAugmentation, ResizeResolution
+from config import M
+from .input_parsing import WireframeHuangKun
+from .transforms import CropAugmentation, ResizeResolution
 
 
 def collate(batch):
@@ -17,17 +19,12 @@ def collate(batch):
 
 
 class LineDataset(Dataset):
-    def __init__(self, rootdir, split, dataset="shanghaiTech"):
-        print("dataset:", dataset)
+    def __init__(self, rootdir, split):
         self.rootdir = rootdir
-        if dataset in ["shanghaiTech", "york"]:
-            filelist = glob.glob(f"{rootdir}/{split}/*_label.npz")
-            filelist.sort()
-        else:
-            raise ValueError("no such dataset")
+        filelist = glob.glob(os.path.join(rootdir, split, '*_line.npz'))
+        filelist.sort()
 
         print(f"n{split}:", len(filelist))
-        self.dataset = dataset
         self.split = split
         self.filelist = filelist
 
@@ -35,10 +32,7 @@ class LineDataset(Dataset):
         return len(self.filelist)
 
     def _get_im_name(self, idx):
-        if self.dataset in ["shanghaiTech", "york"]:
-            iname = self.filelist[idx][:-10] + ".png"
-        else:
-            raise ValueError("no such name!")
+        iname = self.filelist[idx][:-10] + ".png"
         return iname
 
     def __getitem__(self, idx):
@@ -48,12 +42,7 @@ class LineDataset(Dataset):
         target = {}
 
         # step 1 load npz
-        lcmap, lcoff, lleng, angle = WireframeHuangKun.fclip_parsing(
-            self.filelist[idx].replace("label", "line"),
-            M.ang_type
-        )
-        with np.load(self.filelist[idx]) as npz:
-            lpos = npz["lpos"][:, :, :2]
+        lcmap, lcoff, lleng, lpos, angle = WireframeHuangKun.fclip_parsing(self.filelist[idx], M.ang_type)
 
         # step 2 crop augment
         if self.split == "train":
