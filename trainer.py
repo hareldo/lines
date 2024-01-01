@@ -87,14 +87,14 @@ class Trainer(object):
     @staticmethod
     def draw_lines(image, lines):
         image = np.ascontiguousarray(image, dtype=np.uint8)
-        for (v0, v1) in lines:
-            v0, v1 = v0.astype(np.uint8), v1.astype(np.uint8)
-            image = cv2.line(image, v0, v1, thickness=3, color=(0, 255, 0))
+        for (v0, v1) in lines.astype(np.uint16):
+            image = cv2.line(image, (v0[1], v0[0]), (v1[1], v1[0]), thickness=3, color=(0, 255, 0))
         return image
 
-    def log_examples(self, images, results, targets):
+    def log_examples(self, images, results, targets, meta):
         _pscale = 512 / C.model.resolution
         example_id = 0
+        meta = meta[example_id]
 
         result = results['heatmaps']
         if "lleng" in result.keys():
@@ -106,7 +106,8 @@ class Trainer(object):
         lcmap_t, lcoff_t = targets["lcmap"][example_id], targets["lcoff"][example_id]
         lleng_t, angle_t = targets["lleng"][example_id], targets["angle"][example_id]
         lines_t, _ = WireframeHuangKun.fclip_torch(lcmap_t, lcoff_t, lleng_t, angle_t,
-                                                   delta=C.model.delta, nlines=300, ang_type=C.model.ang_type,
+                                                   delta=C.model.delta, nlines=meta['num_lines'],
+                                                   ang_type=C.model.ang_type,
                                                    resolution=C.model.resolution)
 
         lines = lines.cpu().numpy() * _pscale
@@ -136,7 +137,7 @@ class Trainer(object):
         self.metrics[...] = 0
         with torch.no_grad():
             epoch_tqdm = tqdm(self.val_loader, position=0)
-            for batch_idx, (images, targets) in enumerate(epoch_tqdm):
+            for batch_idx, (images, targets, meta) in enumerate(epoch_tqdm):
                 input_dict = {
                     "image": recursive_to(images, self.device),
                     "target": recursive_to(targets, self.device),
@@ -165,7 +166,7 @@ class Trainer(object):
                     #     self.visual.plot_samples(fn, i, H, target, meta, f"{viz}/{index:06}")
                 epoch_tqdm.set_description(
                     f"Val {self.epoch}/{self.max_epoch}, step: {batch_idx + 1}/{len(self.val_loader)}")
-                self.log_examples(images, result, targets)
+                self.log_examples(images, result, targets, meta)
 
         # self.printer.valid_log(len(self.val_loader), self.epoch, self.iteration, self.batch_size, self.metrics[0])
         self.mean_loss = total_loss / len(self.val_loader)
@@ -198,7 +199,7 @@ class Trainer(object):
         self.model.train()
         total_loss = 0
         epoch_tqdm = tqdm(self.train_loader, position=0)
-        for batch_idx, (images, targets) in enumerate(epoch_tqdm):
+        for batch_idx, (images, targets, _) in enumerate(epoch_tqdm):
             self.optim.zero_grad()
             self.metrics[...] = 0
 

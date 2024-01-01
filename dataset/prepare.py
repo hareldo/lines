@@ -42,7 +42,7 @@ def save_heatmap(prefix, image, lines):
 
     # collecting junction endpoints (jun) and number them in dictionary (junc, jids).
     def jid(jun):
-        jun = tuple(jun[:2])
+        jun = tuple(jun)
         if jun in jids:
             return jids[jun]
         jids[jun] = len(junc)

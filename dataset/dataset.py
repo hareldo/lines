@@ -1,8 +1,10 @@
 import glob
 import os.path
 
+import cv2
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 from skimage import io
 from torch.utils.data import Dataset
 from torch.utils.data.dataloader import default_collate
@@ -21,6 +23,7 @@ def collate(batch):
     return (
         default_collate([b[0] for b in batch]),
         {key: default_collate(val) for key, val in target.items()},
+        [b[2] for b in batch]
     )
 
 
@@ -44,7 +47,6 @@ class LineDataset(Dataset):
     def __getitem__(self, idx):
         iname = self._get_im_name(idx)
         image_ = io.imread(iname).astype(float)
-
         target = {}
 
         # step 1 load npz
@@ -53,7 +55,6 @@ class LineDataset(Dataset):
         # step 2 crop augment
         if self.split == "train":
             if M.crop:
-
                 s = np.random.choice(np.arange(0.9, M.crop_factor, 0.1))
                 image_t, lcmap, lcoff, lleng, angle, cropped_lines, cropped_region \
                     = CropAugmentation.random_crop_augmentation(image_, lpos, s)
@@ -70,11 +71,11 @@ class LineDataset(Dataset):
         target["lleng"] = torch.from_numpy(lleng).float()
         target["angle"] = torch.from_numpy(angle).float()
 
-        # TODO: should i add this normalization?
-        image = (image_ - M.image.mean) / M.image.stddev
-        image = np.rollaxis(image, 2).copy()
+        meta = {'num_lines': lpos.shape[0], }
 
-        return torch.from_numpy(image).float(), target
+        image = (image_ - M.image.mean) / M.image.stddev
+        image = image.swapaxes(0, 2)
+        return torch.from_numpy(image).float(), target, meta
 
 
 
