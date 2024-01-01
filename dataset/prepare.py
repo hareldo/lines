@@ -46,7 +46,7 @@ def save_heatmap(prefix, image, lines):
         if jun in jids:
             return jids[jun]
         jids[jun] = len(junc)
-        junc.append(np.array(jun + (0,)))
+        junc.append(np.array(jun))
         return len(junc) - 1
 
     for v0, v1 in lines:

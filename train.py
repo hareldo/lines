@@ -71,6 +71,7 @@ def main():
         "num_workers": C.io.num_workers,
         "pin_memory": True,
     }
+    M.batch_size = 2
     train_loader = torch.utils.data.DataLoader(
         LineDataset(datadir, split="train"), batch_size=M.batch_size, shuffle=True, drop_last=True,
         **kwargs

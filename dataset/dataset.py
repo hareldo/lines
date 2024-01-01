@@ -12,9 +12,15 @@ from .transforms import CropAugmentation, ResizeResolution
 
 
 def collate(batch):
+    target = {}
+    for b in batch:
+        for key, val in b[1].items():
+            curr_list = target.get(key, [])
+            curr_list.append(val)
+            target[key] = curr_list
     return (
         default_collate([b[0] for b in batch]),
-        [b[1] for b in batch],
+        {key: default_collate(val) for key, val in target.items()},
     )
 
 
@@ -32,12 +38,12 @@ class LineDataset(Dataset):
         return len(self.filelist)
 
     def _get_im_name(self, idx):
-        iname = self.filelist[idx][:-10] + ".png"
+        iname = self.filelist[idx][:-len('_line.npz')] + ".png"
         return iname
 
     def __getitem__(self, idx):
         iname = self._get_im_name(idx)
-        image_ = io.imread(iname).astype(float)[:, :, :3]
+        image_ = io.imread(iname).astype(float)
 
         target = {}
 
@@ -64,6 +70,7 @@ class LineDataset(Dataset):
         target["lleng"] = torch.from_numpy(lleng).float()
         target["angle"] = torch.from_numpy(angle).float()
 
+        # TODO: should i add this normalization?
         image = (image_ - M.image.mean) / M.image.stddev
         image = np.rollaxis(image, 2).copy()
 

@@ -21,15 +21,17 @@ class FClip(nn.Module):
 
         self.head_off = np.cumsum([sum(h) for h in head_size])
 
+    def get_head_output_id(self, head_name):
+        order = self.M_dic['head']['order']
+        offidx = order.index(head_name)
+        idx = 0 if offidx == 0 else self.head_off[offidx - 1]
+        return idx, offidx
+
     def lcmap_head(self, output, target):
         name = "lcmap"
-
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-
-        pred = output[s: self.head_off[offidx]].reshape(self.M_dic['head'][name]['head_size'], batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(self.M_dic['head']["lcmap"]['head_size'], batch, row, col)
 
         if self.M_dic['head'][name]['loss'] == "Focal_loss":
             alpha = self.M_dic['head'][name]['focal_alpha']
@@ -44,13 +46,9 @@ class FClip(nn.Module):
 
     def lcoff_head(self, output, target, mask):
         name = 'lcoff'
-
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-
-        pred = output[s: self.head_off[offidx]].reshape(self.M_dic['head'][name]['head_size'], batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(self.M_dic['head'][name]['head_size'], batch, row, col)
 
         loss = sum(
             sigmoid_l1_loss(pred[j], target[j], offset=-0.5, mask=mask)
@@ -62,13 +60,9 @@ class FClip(nn.Module):
 
     def lleng_head(self, output, target, mask):
         name = 'lleng'
-
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-
-        pred = output[s: self.head_off[offidx]].reshape(batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(batch, row, col)
 
         if self.M_dic['head'][name]['loss'] == "sigmoid_L1":
             loss = sigmoid_l1_loss(pred, target, mask=mask)
@@ -85,11 +79,8 @@ class FClip(nn.Module):
     def angle_head(self, output, target, mask):
         name = 'angle'
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-
-        pred = output[s: self.head_off[offidx]].reshape(batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(batch, row, col)
 
         if self.M_dic['head'][name]['loss'] == "sigmoid_L1":
             loss = sigmoid_l1_loss(pred, target, mask=mask)
@@ -106,10 +97,8 @@ class FClip(nn.Module):
     def jmap_head(self, output, target, n_jtyp):
         name = "jmap"
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-        pred = output[s: self.head_off[offidx]].reshape(n_jtyp, self.M_dic['head'][name]['head_size'], batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(n_jtyp, self.M_dic['head'][name]['head_size'], batch, row, col)
 
         if self.M_dic['head'][name]['loss'] == "Focal_loss":
             alpha = self.M_dic['head'][name]['focal_alpha']
@@ -129,11 +118,8 @@ class FClip(nn.Module):
     def joff_head(self, output, target, n_jtyp, mask):
         name = "joff"
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-
-        pred = output[s: self.head_off[offidx]].reshape(
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(
             n_jtyp, self.M_dic['head'][name]['head_size'], batch, row, col)
 
         loss = sum(
@@ -147,10 +133,8 @@ class FClip(nn.Module):
     def lmap_head(self, output, target):
         name = "lmap"
         _, batch, row, col = output.shape
-        order = self.M_dic['head']['order']
-        offidx = order.index(name)
-        s = 0 if offidx == 0 else self.head_off[offidx - 1]
-        pred = output[s: self.head_off[offidx]].reshape(batch, row, col)
+        idx, offidx = self.get_head_output_id(name)
+        pred = output[idx: self.head_off[offidx]].reshape(batch, row, col)
 
         loss = (
             F.binary_cross_entropy_with_logits(pred, target, reduction="none")
@@ -171,7 +155,6 @@ class FClip(nn.Module):
         pass
 
     def trainval_forward(self, input_dict):
-
         image = input_dict["image"]
         outputs, feature, backbone_time = self.backbone(image)
         result = {"feature": feature}
